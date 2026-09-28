@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caça à Cárie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky:#5fd4ff; --white:#f4f8ff; --gray:#93a6c6; --gold:#ffd166; --good:#7dffb4; --bad:#ff6b6b;
+    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;font-family:'Inter',sans-serif;color:var(--white);}
+  h1,h2,h3{font-family:'Baloo 2',sans-serif;}
+  body{
+    background:
+      radial-gradient(ellipse 1000px 500px at 50% -6%, rgba(180,240,255,0.95), rgba(95,212,255,0.45) 35%, transparent 68%),
+      linear-gradient(180deg,#0a1122 0%, #050a16 40%, #030509 100%);
+    min-height:100%; display:flex; align-items:flex-start; justify-content:center; padding:50px 16px;
+  }
+  .halo{position:fixed;top:-180px;left:50%;transform:translateX(-50%);width:900px;height:420px;
+    background:radial-gradient(ellipse, rgba(200,245,255,0.55), transparent 70%);filter:blur(10px);pointer-events:none;z-index:0;}
+
+  .phone{width:100%;max-width:390px;position:relative;z-index:1;
+    background:linear-gradient(160deg,#1a2033,#05070d);border-radius:46px;
+    border:2px solid rgba(255,255,255,0.1);
+    box-shadow:0 40px 100px rgba(0,10,45,0.65), 0 0 70px rgba(150,225,255,0.25);
+    padding:12px;}
+  .screenwrap{background:linear-gradient(180deg,#0d1a34 0%, #060b18 55%);border-radius:36px;min-height:700px;position:relative;overflow:hidden;}
+  .notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:16px;z-index:5;}
+  .statusbar{display:flex;justify-content:space-between;font-size:12px;color:#fff;padding:16px 22px 4px;font-weight:600;}
+
+  .screen{padding:14px 20px 96px;display:none;}
+  .screen.active{display:block;}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin:8px 0 20px;}
+  .who{display:flex;align-items:center;gap:10px;}
+  .avatar{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8fefff,#1a5f8a 70%);display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .who h1{font-size:15.5px;margin:0;font-weight:600;} .who p{margin:1px 0 0;font-size:11px;color:var(--gray);}
+  .bell{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid rgba(255,255,255,0.08);}
+
+  .balance-label{color:var(--gray);font-size:12.5px;margin:0 0 3px;}
+  .balance-value{font-size:33px;font-weight:800;margin:0 0 18px;}
+  .balance-value span{color:var(--sky);}
+
+  .row-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .row-head h2{font-size:14px;margin:0;font-weight:600;} .row-head .add{color:var(--sky);font-size:12px;font-weight:600;background:none;border:none;font-family:inherit;}
+
+  .zones{display:flex;gap:9px;margin-bottom:20px;}
+  .zone{flex:1;border-radius:16px;padding:11px;border:1px solid rgba(255,255,255,0.14);position:relative;overflow:hidden;cursor:pointer;transition:transform .15s;}
+  .zone:active{transform:scale(0.96);}
+  .zone:nth-child(1){background:linear-gradient(155deg,#1b3f70,#0a1c38);}
+  .zone:nth-child(2){background:linear-gradient(155deg,#0e6b9e,#0a1c38);}
+  .zone:nth-child(3){background:linear-gradient(155deg,#20336e,#0a1c38);}
+  .zone::after{content:"";position:absolute;top:-40%;right:-40%;width:90%;height:90%;background:radial-gradient(circle,rgba(255,255,255,0.22),transparent 70%);}
+  .zone .ic{font-size:17px;margin-bottom:14px;} .zone .nm{font-size:9.5px;color:#dbe6f7;margin:0;} .zone .pc{font-size:15px;font-weight:700;margin:2px 0 4px;}
+  .zone .risk{font-size:8.5px;padding:2px 6px;border-radius:20px;display:inline-block;}
+  .r-low{background:rgba(120,255,180,0.18);color:var(--good);} .r-mid{background:rgba(255,209,102,0.2);color:var(--gold);} .r-high{background:rgba(255,107,107,0.2);color:var(--bad);}
+
+  .actions{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:20px;}
+  .action{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;color:var(--white);font-family:inherit;cursor:pointer;}
+  .action-ic{width:48px;height:48px;border-radius:15px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;transition:transform .15s;}
+  .action:active .action-ic{transform:scale(0.9);}
+  .action span{font-size:9.5px;color:var(--gray);text-align:center;line-height:1.2;}
+
+  .monster-card{display:flex;align-items:center;gap:12px;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);border-radius:16px;padding:12px;margin-bottom:16px;}
+  .monster-card .ic{font-size:26px;}
+  .monster-card .info{flex:1;} .monster-card h3{margin:0;font-size:12.5px;} .monster-card p{margin:2px 0 0;font-size:10px;color:var(--gray);}
+  .fight-btn{background:linear-gradient(135deg,var(--bad),#c0392b);border:none;color:#fff;font-family:inherit;font-weight:700;font-size:11px;padding:9px 14px;border-radius:12px;cursor:pointer;}
+
+  .battle{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .battle-ic{width:36px;height:36px;border-radius:12px;background:rgba(255,107,107,0.15);display:flex;align-items:center;justify-content:center;font-size:15px;}
+  .battle-info{flex:1;} .battle-info h4{margin:0;font-size:11.5px;font-weight:600;} .battle-info p{margin:1px 0 0;font-size:9.5px;color:var(--gray);}
+  .battle-pts{font-size:11px;font-weight:700;color:var(--good);}
+
+  /* SHIELD SCREEN */
+  .screen-title{font-size:17px;font-weight:700;margin:8px 0 16px;}
+  .passport{border-radius:20px;padding:18px;margin-bottom:20px;background:linear-gradient(135deg, rgba(150,230,255,0.65), rgba(20,60,110,0.55) 65%);border:1px solid rgba(255,255,255,0.4);position:relative;overflow:hidden;min-height:150px;box-shadow:0 15px 40px rgba(95,212,255,0.3);}
+  .passport::before{content:"";position:absolute;top:-50%;left:-10%;width:80%;height:140%;background:radial-gradient(circle,rgba(255,255,255,0.45),transparent 70%);}
+  .passport-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .chip{width:28px;height:20px;border-radius:5px;background:linear-gradient(135deg,#ffe29a,#ffb347);}
+  .passport-tooth{font-size:22px;letter-spacing:6px;margin:20px 0 14px;}
+  .passport-bottom{display:flex;justify-content:space-between;align-items:flex-end;font-size:10px;letter-spacing:0.5px;}
+  .passport-bottom b{display:block;font-size:12px;margin-top:2px;}
+
+  .controls{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:20px;}
+  .ctrl{display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;color:var(--white);font-family:inherit;cursor:pointer;}
+  .ctrl-ic{width:46px;height:46px;border-radius:50%;background:linear-gradient(160deg,rgba(95,212,255,0.3),rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .ctrl span{font-size:8.5px;color:var(--gray);text-align:center;line-height:1.2;}
+
+  .progress-row{display:flex;gap:10px;margin-bottom:18px;}
+  .progress-card{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:12px;}
+  .progress-card h4{font-size:10.5px;color:var(--gray);font-weight:500;margin:0 0 5px;}
+  .progress-card .val{font-size:13px;font-weight:700;margin-bottom:8px;}
+  .bar-track{height:6px;border-radius:10px;background:rgba(255,255,255,0.08);overflow:hidden;}
+  .bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--sky),#7dffe0);transition:width .4s;}
+  .bar-pct{font-size:9.5px;color:var(--sky);margin-top:5px;display:block;}
+
+  .report-btn{width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px 14px;color:var(--white);font-family:inherit;margin-bottom:16px;cursor:pointer;font-size:12px;font-weight:600;}
+  .report-btn .icb{width:28px;height:28px;border-radius:9px;background:rgba(95,212,255,0.18);display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-size:13px;}
+  .report-btn .right{color:var(--sky);font-size:11px;}
+  .mini-chart{display:flex;align-items:flex-end;gap:6px;height:60px;margin-bottom:6px;}
+  .mini-bar{flex:1;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--sky),#1a5f8a);}
+  .mini-labels{display:flex;gap:6px;} .mini-labels span{flex:1;text-align:center;font-size:8.5px;color:var(--gray);}
+
+  .navbar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-around;padding:11px 6px;border-radius:22px;background:rgba(8,14,30,0.9);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.07);}
+  .navbtn{background:none;border:none;color:var(--gray);font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;cursor:pointer;}
+  .navbtn .nic{font-size:17px;} .navbtn.active{color:var(--sky);}
+
+  /* MODAL / MINIGAMES */
+  .overlay{position:absolute;inset:0;background:rgba(3,6,14,0.92);backdrop-filter:blur(4px);z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;padding:26px;border-radius:36px;text-align:center;}
+  .overlay.active{display:flex;}
+  .overlay h2{font-size:18px;margin:0 0 6px;}
+  .overlay p.sub{color:var(--gray);font-size:12px;margin:0 0 20px;}
+  .close-x{position:absolute;top:16px;right:18px;background:rgba(255,255,255,0.08);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;}
+
+  .brush-target{width:110px;height:110px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8fefff,#0d5f8f 75%);display:flex;align-items:center;justify-content:center;font-size:44px;border:3px solid rgba(255,255,255,0.3);cursor:pointer;user-select:none;transition:transform .08s;margin-bottom:18px;}
+  .brush-target:active{transform:scale(0.88);}
+  .game-timer{font-size:26px;font-weight:800;margin-bottom:10px;font-family:'Baloo 2',sans-serif;}
+  .game-bar-track{width:100%;height:12px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;margin-bottom:22px;}
+  .game-bar-fill{height:100%;background:linear-gradient(90deg,var(--sky),var(--good));width:0%;transition:width .1s;}
+  .big-btn{background:linear-gradient(135deg,var(--sky),#1a7fb0);border:none;color:#04101f;font-weight:800;font-family:inherit;font-size:14px;padding:13px 28px;border-radius:16px;cursor:pointer;}
+
+  .floss-strip{width:100%;height:70px;position:relative;background:rgba(255,255,255,0.04);border-radius:14px;margin-bottom:20px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);}
+  .floss-target{position:absolute;top:14px;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle,#ff9f6b,#c0522b);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;animation:pop .15s;}
+  @keyframes pop{from{transform:scale(0);}to{transform:scale(1);}}
+
+  .quiz-q{font-size:13.5px;font-weight:600;margin-bottom:16px;min-height:40px;}
+  .quiz-opts{display:flex;flex-direction:column;gap:9px;width:100%;margin-bottom:14px;}
+  .quiz-opt{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--white);font-family:inherit;font-size:12px;padding:11px 14px;border-radius:12px;cursor:pointer;text-align:left;}
+  .quiz-opt.correct{background:rgba(125,255,180,0.25);border-color:var(--good);}
+  .quiz-opt.wrong{background:rgba(255,107,107,0.25);border-color:var(--bad);}
+  .hp-track{width:100%;height:10px;background:rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+  .hp-fill{height:100%;background:linear-gradient(90deg,var(--bad),#ff9f6b);transition:width .4s;}
+  .toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:rgba(10,20,40,0.95);border:1px solid rgba(255,255,255,0.15);padding:10px 18px;border-radius:14px;font-size:12.5px;font-weight:600;z-index:30;opacity:0;transition:opacity .3s;pointer-events:none;}
+  .toast.show{opacity:1;}
+
+  /* ===== LUZ AZUL-CÉU NO TERÇO SUPERIOR + VIDRO AZUL CLARO ===== */
+  .screenwrap{
+    background:
+      radial-gradient(ellipse 130% 42% at 50% 0%, #bfeaff 0%, #6fc3ff 28%, rgba(60,140,255,0.75) 52%, transparent 80%),
+      linear-gradient(180deg,#2f6fd6 0%, #123069 22%, #0a1734 40%, #060b18 62%);
+  }
+  .who p, .balance-label{color:#e3f3ff;}
+  .balance-value span{color:#fff;}
+  .bell{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.4);}
+  .avatar{border:2px solid rgba(255,255,255,0.7);}
+  .zone{
+    background:linear-gradient(150deg, rgba(190,232,255,0.42), rgba(90,170,255,0.18) 60%, rgba(20,50,110,0.35)) !important;
+    border:1px solid rgba(255,255,255,0.45);
+    backdrop-filter:blur(8px);
+    box-shadow:0 8px 24px rgba(80,170,255,0.25), inset 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .zone .nm{color:#fff;}
+  .passport{
+    background:linear-gradient(135deg, rgba(200,240,255,0.75), rgba(100,180,255,0.35) 55%, rgba(20,60,120,0.5)) !important;
+    border:1px solid rgba(255,255,255,0.6);
+    backdrop-filter:blur(10px);
+  }
+  .screen-title{color:#fff;}
+</style>
+</head>
+<body>
+<div class="halo"></div>
+<div class="phone">
+  <div class="screenwrap">
+    <div class="notch"></div>
+    <div class="statusbar"><span id="clock">16:26</span><span>📶 🔋</span></div>
+    <div class="toast" id="toast"></div>
+
+    <!-- HOME -->
+    <div class="screen active" id="home">
+      <div class="topbar">
+        <div class="who"><div class="avatar">🧑‍🚀</div><div><h1>Olá, Capitão!</h1><p>Pronto para a missão de hoje?</p></div></div>
+        <div class="bell">🔔</div>
+      </div>
+      <p class="balance-label">Moedas de Flúor</p>
+      <p class="balance-value"><span>🪙</span> <span id="coins">8200</span></p>
+
+      <div class="row-head"><h2>Zonas da Boca</h2><span class="add">toque p/ detalhes</span></div>
+      <div class="zones" id="zones"></div>
+
+      <div class="row-head"><h2>Ferramentas de Combate</h2></div>
+      <div class="actions">
+        <button class="action" onclick="openGame('floss')"><div class="action-ic">🧵</div><span>Fio Dental</span></button>
+        <button class="action" onclick="openGame('brush')"><div class="action-ic">🪥</div><span>Escova Mágica</span></button>
+        <button class="action" onclick="useMouthwash()"><div class="action-ic">💧</div><span>Enxaguante</span></button>
+        <button class="action" onclick="toggleShield()"><div class="action-ic" id="shieldIcon">🛡️</div><span>Escudo de Flúor</span></button>
+      </div>
+
+      <div class="row-head"><h2>Batalha Ativa</h2></div>
+      <div class="monster-card">
+        <div class="ic">🍬</div>
+        <div class="info"><h3>Monstro do Açúcar</h3><p>Ataca as zonas mais sujas</p></div>
+        <button class="fight-btn" onclick="openGame('battle')">Batalhar</button>
+      </div>
+
+      <div class="row-head"><h2>Batalhas Recentes</h2></div>
+      <div id="battleLog"></div>
+    </div>
+
+    <!-- SHIELD -->
+    <div class="screen" id="shield">
+      <p class="screen-title">Controle de Escudo</p>
+      <div class="passport">
+        <div class="passport-top"><div class="chip"></div><span id="shieldStatus" style="font-size:11.5px;">🛡️ Escudo ativo</span></div>
+        <div class="passport-tooth">🦷 🦷 🦷 🦷</div>
+        <div class="passport-bottom">
+          <span>CAPITÃO DO SORRISO<b>VIKAS MOHNADKA</b></span>
+          <span id="riskLevel" style="font-size:15px;">Nível 12</span>
+        </div>
+      </div>
+
+      <div class="row-head"><h2>Controle</h2></div>
+      <div class="controls">
+        <button class="ctrl" onclick="showToast('Escova trocada! Nível de cerdas resetado.')"><div class="ctrl-ic">🪥</div><span>Trocar<br>Escova</span></button>
+        <button class="ctrl" onclick="showToast('Estratégia de higiene atualizada.')"><div class="ctrl-ic">🔐</div><span>Mudar<br>Estratégia</span></button>
+        <button class="ctrl" onclick="showToast('Cerdas em bom estado — 12 dias restantes.')"><div class="ctrl-ic">⚠️</div><span>Alerta de<br>Cerdas</span></button>
+        <button class="ctrl" onclick="showToast('Limite diário de doces: 2 porções.')"><div class="ctrl-ic">📶</div><span>Limite de<br>Doces</span></button>
+      </div>
+
+      <div class="row-head"><h2>Progresso do Mês</h2></div>
+      <div class="progress-row">
+        <div class="progress-card"><h4>Este Mês</h4><p class="val"><span id="brushCount">18</span>/36 escov.</p>
+          <div class="bar-track"><div class="bar-fill" id="brushBar" style="width:50%;"></div></div><span class="bar-pct" id="brushPct">50%</span></div>
+        <div class="progress-card"><h4>Total Geral</h4><p class="val"><span id="totalPts">2880</span>/3600 pts</p>
+          <div class="bar-track"><div class="bar-fill" id="totalBar" style="width:80%;"></div></div><span class="bar-pct" id="totalPct">80%</span></div>
+      </div>
+
+      <div class="row-head"><h2>Relatório de Saúde</h2></div>
+      <button class="report-btn" onclick="document.getElementById('chart').style.display = document.getElementById('chart').style.display==='block' ? 'none':'block';">
+        <span><span class="icb">📊</span>Ataques de Cárie por Horário</span><span class="right">Ver ▾</span>
+      </button>
+      <div id="chart" style="display:none;">
+        <div class="mini-chart">
+          <div class="mini-bar" style="height:20%;"></div><div class="mini-bar" style="height:15%;"></div>
+          <div class="mini-bar" style="height:35%;"></div><div class="mini-bar" style="height:30%;"></div>
+          <div class="mini-bar" style="height:90%;"></div><div class="mini-bar" style="height:65%;"></div>
+        </div>
+        <div class="mini-labels"><span>7h</span><span>12h</span><span>15h</span><span>18h</span><span>21h</span><span>23h</span></div>
+      </div>
+    </div>
+
+    <div class="navbar">
+      <button class="navbtn active" data-s="home"><span class="nic">🏠</span>Início</button>
+      <button class="navbtn" data-s="shield"><span class="nic">🛡️</span>Escudo</button>
+    </div>
+
+    <!-- GAME OVERLAYS -->
+    <div class="overlay" id="ov-brush">
+      <button class="close-x" onclick="closeGame('brush')">✕</button>
+      <h2>Escova Mágica</h2><p class="sub">Toque na escova o mais rápido possível por 8 segundos!</p>
+      <div class="game-timer" id="brushTimer">8s</div>
+      <div class="brush-target" id="brushBtn" onclick="brushTap()">🪥</div>
+      <div class="game-bar-track"><div class="game-bar-fill" id="brushProg"></div></div>
+      <button class="big-btn" id="brushStart" onclick="startBrush()">Começar</button>
+    </div>
+
+    <div class="overlay" id="ov-floss">
+      <button class="close-x" onclick="closeGame('floss')">✕</button>
+      <h2>Fio Dental</h2><p class="sub">Toque nos restos de comida antes que fujam!</p>
+      <div class="floss-strip" id="flossStrip"></div>
+      <p style="font-size:12px;color:var(--gray);margin:0 0 14px;">Acertos: <span id="flossHits">0</span>/5</p>
+      <button class="big-btn" id="flossStart" onclick="startFloss()">Começar</button>
+    </div>
+
+    <div class="overlay" id="ov-battle">
+      <button class="close-x" onclick="closeGame('battle')">✕</button>
+      <h2>🍬 Monstro do Açúcar</h2>
+      <div class="hp-track"><div class="hp-fill" id="monsterHp" style="width:100%;"></div></div>
+      <p class="quiz-q" id="quizQ">Carregando pergunta...</p>
+      <div class="quiz-opts" id="quizOpts"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ---------- STATE ----------
+  const defaultState = {
+    coins: 8200, carie: 22,
+    zones: { superior: 92, molares: 65, inferior: 78 },
+    brushCount: 18, brushGoal: 36,
+    totalPts: 2880, totalGoal: 3600,
+    shield: true,
+    battles: [
+      {name:'Monstro do Açúcar', time:'20:15', pts:160},
+      {name:'Placa Bacteriana', time:'12:30', pts:90}
+    ]
+  };
+  let state;
+  try{
+    const saved = localStorage.getItem('carie_state_v1');
+    state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultState));
+  }catch(e){ state = JSON.parse(JSON.stringify(defaultState)); }
+
+  function save(){ try{ localStorage.setItem('carie_state_v1', JSON.stringify(state)); }catch(e){} }
+
+  function render(){
+    document.getElementById('coins').textContent = state.coins.toLocaleString('pt-BR');
+    const zc = document.getElementById('zones');
+    const zoneDefs = [
+      {key:'superior', ic:'😁', nm:'Superior'},
+      {key:'molares', ic:'😬', nm:'Molares'},
+      {key:'inferior', ic:'😀', nm:'Inferior'}
+    ];
+    zc.innerHTML = zoneDefs.map(z=>{
+      const pct = state.zones[z.key];
+      const risk = pct>=85 ? ['Baixo','r-low'] : pct>=60 ? ['Médio','r-mid'] : ['Alto','r-high'];
+      return `<div class="zone" onclick="quickClean('${z.key}')"><div class="ic">${z.ic}</div><p class="nm">${z.nm}</p><p class="pc">${pct}%</p><span class="risk ${risk[1]}">${risk[0]}</span></div>`;
+    }).join('');
+
+    const bl = document.getElementById('battleLog');
+    bl.innerHTML = state.battles.slice(0,4).map(b=>`
+      <div class="battle"><div class="battle-ic">🍬</div>
+        <div class="battle-info"><h4>${b.name}</h4><p>${b.time}</p></div>
+        <div class="battle-pts">+${b.pts}</div>
+      </div>`).join('');
+
+    document.getElementById('shieldIcon').textContent = state.shield ? '🛡️' : '🚫';
+    document.getElementById('shieldStatus').textContent = state.shield ? '🛡️ Escudo ativo' : '⚠️ Escudo desativado';
+    document.getElementById('riskLevel').textContent = 'Cárie ' + state.carie + '%';
+
+    document.getElementById('brushCount').textContent = state.brushCount;
+    const bpct = Math.min(100, Math.round(state.brushCount/state.brushGoal*100));
+    document.getElementById('brushBar').style.width = bpct+'%';
+    document.getElementById('brushPct').textContent = bpct+'%';
+
+    document.getElementById('totalPts').textContent = state.totalPts.toLocaleString('pt-BR');
+    const tpct = Math.min(100, Math.round(state.totalPts/state.totalGoal*100));
+    document.getElementById('totalBar').style.width = tpct+'%';
+    document.getElementById('totalPct').textContent = tpct+'%';
+    save();
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(window._toastT);
+    window._toastT = setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  function quickClean(key){
+    showToast('Toque em "Escova Mágica" ou "Fio Dental" para limpar essa zona!');
+  }
+
+  // ---------- NAV ----------
+  document.querySelectorAll('.navbtn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById(btn.dataset.s).classList.add('active');
+    });
+  });
+
+  function openGame(id){ document.getElementById('ov-'+id).classList.add('active'); if(id==='battle') startBattle(); }
+  function closeGame(id){ document.getElementById('ov-'+id).classList.remove('active'); resetGame(id); }
+
+  function resetGame(id){
+    if(id==='brush'){ clearInterval(brushInterval); brushTaps=0; brushTimeLeft=8;
+      document.getElementById('brushProg').style.width='0%'; document.getElementById('brushTimer').textContent='8s';
+      document.getElementById('brushStart').style.display='inline-block'; }
+    if(id==='floss'){ clearInterval(flossSpawner); flossHits=0; document.getElementById('flossStrip').innerHTML='';
+      document.getElementById('flossHits').textContent='0'; document.getElementById('flossStart').style.display='inline-block'; }
+  }
+
+  // ---------- BRUSH MINIGAME ----------
+  let brushInterval, brushTaps=0, brushTimeLeft=8, brushRunning=false;
+  function startBrush(){
+    if(brushRunning) return; brushRunning=true;
+    document.getElementById('brushStart').style.display='none';
+    brushTaps=0; brushTimeLeft=8;
+    document.getElementById('brushTimer').textContent = brushTimeLeft+'s';
+    document.getElementById('brushProg').style.width='0%';
+    brushInterval = setInterval(()=>{
+      brushTimeLeft--;
+      document.getElementById('brushTimer').textContent = brushTimeLeft+'s';
+      if(brushTimeLeft<=0){
+        clearInterval(brushInterval); brushRunning=false;
+        finishBrush();
+      }
+    },1000);
+  }
+  function brushTap(){
+    if(!brushRunning) return;
+    brushTaps++;
+    const pct = Math.min(100, brushTaps*4);
+    document.getElementById('brushProg').style.width = pct+'%';
+  }
+  function finishBrush(){
+    const gain = Math.min(30, Math.round(brushTaps*1.5));
+    const coinGain = brushTaps*4;
+    const zoneKeys = Object.keys(state.zones);
+    const lowest = zoneKeys.reduce((a,b)=> state.zones[a] <= state.zones[b] ? a : b);
+    state.zones[lowest] = Math.min(100, state.zones[lowest]+gain);
+    state.coins += coinGain;
+    state.brushCount += 1;
+    state.carie = Math.max(0, state.carie - Math.round(gain/3));
+    render();
+    document.getElementById('brushStart').textContent = 'Jogar de novo';
+    document.getElementById('brushStart').style.display='inline-block';
+    document.getElementById('brushStart').onclick = ()=>{ resetGame('brush'); startBrush(); };
+    showToast(`+${coinGain} moedas! Zona limpa +${gain}%`);
+  }
+
+  // ---------- FLOSS MINIGAME ----------
+  let flossHits=0, flossSpawner, flossRounds=0, flossRunning=false;
+  function startFloss(){
+    if(flossRunning) return; flossRunning=true;
+    document.getElementById('flossStart').style.display='none';
+    flossHits=0; flossRounds=0;
+    document.getElementById('flossHits').textContent='0';
+    spawnFlossTarget();
+  }
+  function spawnFlossTarget(){
+    if(flossRounds>=5){ flossRunning=false; finishFloss(); return; }
+    flossRounds++;
+    const strip = document.getElementById('flossStrip');
+    strip.innerHTML='';
+    const el = document.createElement('div');
+    el.className='floss-target';
+    el.textContent='🍞';
+    el.style.left = (10 + Math.random()*75) + '%';
+    el.onclick = ()=>{ flossHits++; document.getElementById('flossHits').textContent = flossHits; strip.innerHTML=''; setTimeout(spawnFlossTarget, 250); };
+    strip.appendChild(el);
+    clearTimeout(flossSpawner);
+    flossSpawner = setTimeout(()=>{ if(strip.contains(el)){ strip.innerHTML=''; setTimeout(spawnFlossTarget,250);} }, 1200);
+  }
+  function finishFloss(){
+    const coinGain = flossHits*30;
+    state.zones.molares = Math.min(100, state.zones.molares + flossHits*3);
+    state.coins += coinGain;
+    state.carie = Math.max(0, state.carie - flossHits);
+    render();
+    document.getElementById('flossStart').textContent='Jogar de novo';
+    document.getElementById('flossStart').style.display='inline-block';
+    document.getElementById('flossStart').onclick = ()=>{ resetGame('floss'); startFloss(); };
+    showToast(`Fio Dental: ${flossHits}/5 acertos, +${coinGain} moedas!`);
+  }
+
+  // ---------- MOUTHWASH ----------
+  let mouthwashCooldown=false;
+  function useMouthwash(){
+    if(mouthwashCooldown){ showToast('Enxaguante recarregando...'); return; }
+    if(state.coins < 100){ showToast('Moedas insuficientes! (100 necessárias)'); return; }
+    state.coins -= 100;
+    Object.keys(state.zones).forEach(k=> state.zones[k] = Math.min(100, state.zones[k]+6));
+    state.carie = Math.max(0, state.carie - 4);
+    render();
+    showToast('Enxaguante usado! Todas as zonas +6%');
+    mouthwashCooldown=true; setTimeout(()=>mouthwashCooldown=false, 8000);
+  }
+
+  // ---------- SHIELD ----------
+  function toggleShield(){
+    if(!state.shield && state.coins < 300){ showToast('Escudo de Flúor custa 300 moedas.'); return; }
+    if(!state.shield){ state.coins -= 300; }
+    state.shield = !state.shield;
+    render();
+    showToast(state.shield ? 'Escudo de Flúor ativado!' : 'Escudo desativado.');
+  }
+
+  // ---------- BATTLE (QUIZ) ----------
+  const quizPool = [
+    {q:'Quantas vezes ao dia devemos escovar os dentes?', opts:['1 vez','2 a 3 vezes','5 vezes'], correct:1},
+    {q:'Por quanto tempo devemos escovar os dentes?', opts:['30 segundos','2 minutos','10 minutos'], correct:1},
+    {q:'Qual desses alimentos mais favorece a cárie?', opts:['Cenoura','Água','Balas e doces'], correct:2},
+    {q:'Quando devemos trocar a escova de dentes?', opts:['A cada 3 meses','Uma vez por ano','Nunca'], correct:0},
+    {q:'O que ajuda a proteger o esmalte dos dentes?', opts:['Flúor','Açúcar','Refrigerante'], correct:0},
+    {q:'Depois de comer doces, o ideal é...', opts:['Esperar o dia todo','Escovar os dentes','Comer mais doce'], correct:1}
+  ];
+  let monsterHp=100, quizQueue=[], battleActive=false;
+  function startBattle(){
+    if(battleActive) return; battleActive=true;
+    monsterHp=100;
+    document.getElementById('monsterHp').style.width='100%';
+    quizQueue = [...quizPool].sort(()=>Math.random()-0.5).slice(0,3);
+    nextQuestion();
+  }
+  function nextQuestion(){
+    if(quizQueue.length===0 || monsterHp<=0){ return endBattle(monsterHp<=0); }
+    const q = quizQueue.shift();
+    document.getElementById('quizQ').textContent = q.q;
+    const optsEl = document.getElementById('quizOpts');
+    optsEl.innerHTML='';
+    q.opts.forEach((opt,i)=>{
+      const b = document.createElement('button');
+      b.className='quiz-opt'; b.textContent = opt;
+      b.onclick = ()=> answerQuestion(i===q.correct, b, optsEl);
+      optsEl.appendChild(b);
+    });
+  }
+  function answerQuestion(correct, btn, optsEl){
+    Array.from(optsEl.children).forEach(c=>c.onclick=null);
+    if(correct){
+      btn.classList.add('correct');
+      monsterHp = Math.max(0, monsterHp-34);
+      document.getElementById('monsterHp').style.width = monsterHp+'%';
+    } else {
+      btn.classList.add('wrong');
+      state.carie = Math.min(100, state.carie+5);
+    }
+    setTimeout(()=> nextQuestion(), 700);
+  }
+  function endBattle(won){
+    battleActive=false;
+    if(won){
+      state.coins += 250;
+      state.carie = Math.max(0, state.carie - 10);
+      const now = new Date();
+      state.battles.unshift({name:'Monstro do Açúcar', time: now.getHours()+':'+String(now.getMinutes()).padStart(2,'0'), pts:250});
+      document.getElementById('quizQ').textContent = 'Vitória! Monstro derrotado! +250 moedas';
+    } else {
+      document.getElementById('quizQ').textContent = 'Batalha encerrada. Continue praticando!';
+    }
+    document.getElementById('quizOpts').innerHTML = `<button class="big-btn" onclick="closeGame('battle')">Fechar</button>`;
+    render();
+  }
+
+  render();
+  setInterval(()=>{
+    const d = new Date();
+    document.getElementById('clock').textContent = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }, 30000);
+</script>
+</body>
+</html>
